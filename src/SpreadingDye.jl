@@ -22,10 +22,10 @@ end
 on_domain(dom, point) = min(point...) > 0 && first(point) <= size(dom, 1) && last(point) <= size(dom, 2) && dom[point...]
 
 # use rejection sampling to get a random point on the domain
-function pick_random(dom)
-    x = (rand(axes(dom,1)), rand(axes(dom,2)))
+function pick_random(m)
+    x = (rand(axes(m,1)), rand(axes(m,2)))
     while !dom[x...]
-        x = (rand(axes(dom,1)), rand(axes(dom,2)))
+        x = (rand(axes(m,1)), rand(axes(m,2)))
     end
     x
 end
