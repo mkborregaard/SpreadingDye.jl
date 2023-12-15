@@ -4,24 +4,6 @@ module SpreadingDye
 const rook = ((-1,0), (0, 1), (1, 0), (0, -1))
 const quen = Tuple((x,y) for x in -1:1, y in -1:1 if !(x == y == 0))
 
-# the internal range filling function
-function spreading_dye!(georange, finalrange, dom, start; algo = rook)
-    # is the start cell outside the domain?
-    dom[start...] || return dom 
-
-    fill!(georange, false)
-    # apply the starting cell
-    georange[start...] = true
-    edges = Set((start, start .+ nb) for nb in algo if on_domain(dom, start .+ nb))
-    rangesize = 1
-    newcell = edge = start
-
-    # grow the range one cell at a time
-    while (rangesize += 1) <= finalrange
-        grow!(georange, edges, dom, algo)
-    end
-end
-
 function center_cell(m::AbstractMatrix{<:Number})
     range = 0
     x = 0
@@ -48,13 +30,6 @@ function pick_random(dom)
     x
 end
 
-# the outward_facing function to do the spreading dye
-function spreading_dye(finalrange, dom, start = pick_random(dom); algo = rook)
-    georange = fill!(similar(dom, Bool), false)
-    spreading_dye!(georange, finalrange, dom, start; algo = rook)
-    georange
-end
-
 # grow the range one at a time
 function grow!(georange, edges, dom, algo)
     edge, newcell = rand(edges)
@@ -64,6 +39,31 @@ function grow!(georange, edges, dom, algo)
         neighbor = newcell .+ nb
         on_domain(dom, neighbor) && !georange[neighbor...] && push!(edges, (newcell, neighbor))
     end
+end
+
+# the internal range filling function
+function spreading_dye!(georange, finalrange, dom, start; algo = rook)
+    # is the start cell outside the domain?
+    dom[start...] || return dom 
+
+    fill!(georange, false)
+    # apply the starting cell
+    georange[start...] = true
+    edges = Set((start, start .+ nb) for nb in algo if on_domain(dom, start .+ nb))
+    rangesize = 1
+    newcell = edge = start
+
+    # grow the range one cell at a time
+    while (rangesize += 1) <= finalrange
+        grow!(georange, edges, dom, algo)
+    end
+end
+
+# the outward_facing function to do the spreading dye
+function spreading_dye(finalrange, dom, start = pick_random(dom); algo = rook)
+    georange = fill!(similar(dom, Bool), false)
+    spreading_dye!(georange, finalrange, dom, start; algo = rook)
+    georange
 end
 
 export spreading_dye, spreading_dye!, pick_random, center_cell
