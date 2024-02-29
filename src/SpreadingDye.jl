@@ -44,8 +44,9 @@ function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{B
     georange[newcell...] = true
     for nb in algos[algo]
         neighbor = newcell .+ nb
-        within_edges(dom, neighbor) && (ignore_domain || dom[neighbor...]) && !georange[neighbor...] &&
+        if within_edges(dom, neighbor) && (ignore_domain || dom[neighbor...]) && !georange[neighbor...]
             push!(edges, (newcell, neighbor))
+        end
     end
     newcell
 end
@@ -56,7 +57,7 @@ function spreading_dye!(georange::AbstractMatrix{Bool}, finalrange::Int, dom::Ab
     # is the start cell outside the domain?
     dom[start...] || return dom 
 
-    fill!(georange, false)
+    fill!(georange, false) # TODO: Is this the right design? We might want to expand existing ranges
     # apply the starting cell
     georange[start...] = true
     edges = Set((start, start .+ nb) for nb in algos[algo] if on_domain(dom, start .+ nb))
@@ -74,6 +75,7 @@ function spreading_dye(finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{
     georange = fill!(similar(dom, Bool), false)
     spreading_dye!(georange, finalrange, dom, start; algo)
 end
+
 const i = [0]
 function jump(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol)
     edges = Set(((i,j), (i,j).+nb) 
