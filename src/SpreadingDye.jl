@@ -91,5 +91,5 @@ function jump(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::S
     ((0,0), newcell)
 end
 
-export spreading_dye, spreading_dye!, pick_random, center_cell
+export spreading_dye, spreading_dye!, pick_random, center_cell, grow!, jump
 end
