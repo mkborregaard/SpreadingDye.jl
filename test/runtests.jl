@@ -10,6 +10,7 @@ using Test
 end
 
 @testset "Jesper's example" begin
+    import ArchGDAL
     using Rasters
     dd = Raster("../data/domaene.tif")
     dom = !=(missingval(dd)).(dd)
