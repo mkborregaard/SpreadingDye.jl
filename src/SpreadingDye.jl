@@ -76,12 +76,24 @@ function spreading_dye(finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{
     spreading_dye!(georange, finalrange, dom, start; algo)
 end
 
+function find_edges(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol)
+    Set(((i,j), (i,j).+nb) 
+    for i in axes(dom, 1), j in axes(dom, 2), nb in algos[algo] 
+        if within_edges(dom, (i,j).+nb) && georange[i,j] && !georange[((i,j).+nb)...]
+    )
+end
+
+function expand_spreading!(georange::AbstractMatrix{Bool}, add_cells::Int, dom::AbstractMatrix{Bool}; algo::Symbol = :rook)
+    edges = find_edges(georange, dom, algo)
+    for i in 1:add_cells
+        grow!(georange, edges, dom, algo)
+    end
+    georange
+end
+
 const i = [0]
 function jump(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol)
-    edges = Set(((i,j), (i,j).+nb) 
-        for i in axes(dom, 1), j in axes(dom, 2), nb in algos[algo] 
-            if within_edges(dom, (i,j).+nb) && georange[i,j] && !georange[((i,j).+nb)...]
-    )
+    edges = find_edges(georange, dom, algo)
     newcell = last(rand(edges))
     while !dom[newcell...]
         newcell = grow!(georange, edges, dom, algo; ignore_domain = true)
