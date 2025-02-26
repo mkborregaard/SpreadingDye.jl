@@ -25,7 +25,7 @@ within_edges(dom::AbstractMatrix, point::Tuple{Int, Int}) = min(point...) > 0 &&
 on_domain(dom::AbstractMatrix{Bool}, point::Tuple{Int, Int}) = within_edges(dom, point) && dom[point...]
 
 # use rejection sampling to get a random point on the domain
-function pick_random(m::AbstractMatrix{Bool})
+function random_point_on_domain(m::AbstractMatrix{Bool})
     x = (rand(axes(m,1)), rand(axes(m,2)))
     while !m[x...]
         x = (rand(axes(m,1)), rand(axes(m,2)))
@@ -35,7 +35,7 @@ end
 
 # grow the range one at a time
 function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{Bool}, algo::Symbol; ignore_domain = false)
-    newcell = isempty(edges) ? pick_random(georange) : first(rand(edges))
+    newcell = isempty(edges) ? random_point_on_domain(georange) : first(rand(edges))
     while georange[newcell...]
         isempty(edges) && push!(edges, jump(georange, dom, algo)) # allows for patchy ranges
         edge, newcell = rand(edges)
@@ -52,7 +52,7 @@ function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{B
 end
 
 # the internal range filling function
-function spreading_dye!(georange::AbstractMatrix{Bool}, finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{Int, Int} = pick_random(dom); algo::Symbol = :rook)
+function spreading_dye!(georange::AbstractMatrix{Bool}, finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{Int, Int} = random_point_on_domain(dom); algo::Symbol = :rook)
     finalrange > count(dom) && error("finalrange $(finalrange) larger than domain size $(count(dom))")
     # is the start cell outside the domain?
     dom[start...] || return dom 
@@ -71,7 +71,7 @@ function spreading_dye!(georange::AbstractMatrix{Bool}, finalrange::Int, dom::Ab
 end
 
 # the outward_facing function to do the spreading dye
-function spreading_dye(finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{Int, Int} = pick_random(dom); algo::Symbol = :rook)
+function spreading_dye(finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{Int, Int} = random_point_on_domain(dom); algo::Symbol = :rook)
     georange = fill!(similar(dom, Bool), false)
     spreading_dye!(georange, finalrange, dom, start; algo)
 end
@@ -103,5 +103,5 @@ function jump(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::S
     ((0,0), newcell)
 end
 
-export spreading_dye, spreading_dye!, pick_random, center_cell, grow!, jump
+export spreading_dye, spreading_dye!, random_point_on_domain, center_cell, grow!, jump
 end

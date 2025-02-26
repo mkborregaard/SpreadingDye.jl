@@ -10,7 +10,7 @@ Jetz, W., & Rahbek, C. (2001). Geometric constraints explain much of the species
 
 ### Exported functions:
 ```julia
-spreading_dye(finalrange, dom, start = pick_random(dom); algo = rook)
+spreading_dye(finalrange, dom, start = random_point_on_domain(dom); algo = rook)
 ```
 Create a new random range with the spreading dye algorithm
 - finalrange:   An integer specifying the number of grid cells to include in the range
@@ -31,6 +31,6 @@ Return the centroid cell of all cells with a non-0 finite value
 - m:            A matrix or raster
 
 ```julia
-pick_random(m)
+random_point_on_domain(m)
 ```
 Use rejection sampling to get a random point on the domain
