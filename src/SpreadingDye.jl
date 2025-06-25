@@ -87,6 +87,8 @@ function find_edges(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, a
 end
 
 function expand_spreading!(georange::AbstractMatrix{Bool}, add_cells::Int, dom::AbstractMatrix{Bool}; algo::Symbol = :rook)
+    add_cells + count(georange) > count(dom) && 
+        error("not enough non-filled cells in domain to expand by $(add_cells) cells")
     edges = find_edges(georange, dom, algo)
     for i in 1:add_cells
         grow!(georange, edges, dom, algo)
