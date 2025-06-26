@@ -37,7 +37,7 @@ function random_point_on_domain(m::AbstractMatrix{Bool})
 end
 
 # grow the range one at a time
-function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{Bool}, algo::Symbol; ignore_domain = false)
+function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{Bool}, algo::Tuple; ignore_domain = false)
     newcell = isempty(edges) ? random_point_on_domain(georange) : first(rand(edges))
     while georange[newcell...]
         isempty(edges) && push!(edges, jump(georange, dom, algo)) # allows for patchy ranges
@@ -45,7 +45,7 @@ function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{B
         pop!(edges, (edge, newcell))
     end
     georange[newcell...] = true
-    for nb in algos[algo]
+    for nb in algo
         neighbor = newcell .+ nb
         if is_edge(georange, dom, neighbor, ignore_domain)
             push!(edges, (newcell, neighbor))
@@ -55,7 +55,9 @@ function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{B
 end
 
 # the internal range filling function
-function spreading_dye!(georange::AbstractMatrix{Bool}, finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{Int, Int} = random_point_on_domain(dom); algo::Symbol = :rook)
+spreading_dye!(georange, finalrange, dom, start = random_point_on_domain(dom); algo::Symbol = :rook) =
+    spreading_dye!(georange, finalrange, dom, start, algos[algo])
+function spreading_dye!(georange::AbstractMatrix{Bool}, finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{Int, Int}, algo::Tuple)
     finalrange > count(dom) && error("finalrange $(finalrange) larger than domain size $(count(dom))")
     # is the start cell outside the domain?
     dom[start...] || return dom 
@@ -63,7 +65,7 @@ function spreading_dye!(georange::AbstractMatrix{Bool}, finalrange::Int, dom::Ab
     fill!(georange, false) # TODO: Is this the right design? We might want to expand existing ranges
     # apply the starting cell
     georange[start...] = true
-    edges = Set((start, start .+ nb) for nb in algos[algo] if on_domain(dom, start .+ nb))
+    edges = Set((start, start .+ nb) for nb in algo if on_domain(dom, start .+ nb))
     rangesize = 1
 
     # grow the range one cell at a time
@@ -79,14 +81,16 @@ function spreading_dye(finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{
     spreading_dye!(georange, finalrange, dom, start; algo)
 end
 
-function find_edges(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol, ignore_domain::Bool = false)
+function find_edges(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo, ignore_domain::Bool = false)
     Set(((i,j), (i,j).+nb) 
-    for i in axes(dom, 1), j in axes(dom, 2), nb in algos[algo] 
+    for i in axes(dom, 1), j in axes(dom, 2), nb in algo
         if georange[i,j] && is_edge(georange, dom, (i,j).+nb, ignore_domain)
     )
 end
 
-function expand_spreading!(georange::AbstractMatrix{Bool}, add_cells::Int, dom::AbstractMatrix{Bool}; algo::Symbol = :rook)
+expand_spreading!(georange, add_cells, dom; algo::Symbol = :rook) = 
+    expand_spreading!(georange, add_cells, dom, algos[algo])
+function expand_spreading!(georange::AbstractMatrix{Bool}, add_cells::Int, dom::AbstractMatrix{Bool}, algo::Tuple)
     add_cells + count(georange) > count(dom) && 
         error("not enough non-filled cells in domain to expand by $(add_cells) cells")
     edges = find_edges(georange, dom, algo)
@@ -97,7 +101,7 @@ function expand_spreading!(georange::AbstractMatrix{Bool}, add_cells::Int, dom::
 end
 
 const i = [0]
-function jump(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol)
+function jump(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo)
     edges = find_edges(georange, dom, algo, true)
     newcell = last(rand(edges))
     while !dom[newcell...]
