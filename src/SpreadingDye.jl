@@ -23,6 +23,9 @@ end
 # is a point on the domain?
 within_edges(dom::AbstractMatrix, point::Tuple{Int, Int}) = min(point...) > 0 && first(point) <= size(dom, 1) && last(point) <= size(dom, 2)
 on_domain(dom::AbstractMatrix{Bool}, point::Tuple{Int, Int}) = within_edges(dom, point) && dom[point...]
+# is a point an edge of the domain?
+is_edge(georange, dom, point, ignore_domain) = 
+    within_edges(dom, point) && (ignore_domain || dom[point...]) && !georange[point...]
 
 # use rejection sampling to get a random point on the domain
 function random_point_on_domain(m::AbstractMatrix{Bool})
@@ -44,7 +47,7 @@ function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{B
     georange[newcell...] = true
     for nb in algos[algo]
         neighbor = newcell .+ nb
-        if within_edges(dom, neighbor) && (ignore_domain || dom[neighbor...]) && !georange[neighbor...]
+        if is_edge(georange, dom, neighbor, ignore_domain)
             push!(edges, (newcell, neighbor))
         end
     end
@@ -76,14 +79,16 @@ function spreading_dye(finalrange::Int, dom::AbstractMatrix{Bool}, start::Tuple{
     spreading_dye!(georange, finalrange, dom, start; algo)
 end
 
-function find_edges(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol)
+function find_edges(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol, ignore_domain::Bool = false)
     Set(((i,j), (i,j).+nb) 
     for i in axes(dom, 1), j in axes(dom, 2), nb in algos[algo] 
-        if within_edges(dom, (i,j).+nb) && georange[i,j] && !georange[((i,j).+nb)...]
+        if georange[i,j] && is_edge(georange, dom, (i,j).+nb, ignore_domain)
     )
 end
 
 function expand_spreading!(georange::AbstractMatrix{Bool}, add_cells::Int, dom::AbstractMatrix{Bool}; algo::Symbol = :rook)
+    add_cells + count(georange) > count(dom) && 
+        error("not enough non-filled cells in domain to expand by $(add_cells) cells")
     edges = find_edges(georange, dom, algo)
     for i in 1:add_cells
         grow!(georange, edges, dom, algo)
@@ -93,7 +98,7 @@ end
 
 const i = [0]
 function jump(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol)
-    edges = find_edges(georange, dom, algo)
+    edges = find_edges(georange, dom, algo, true)
     newcell = last(rand(edges))
     while !dom[newcell...]
         newcell = grow!(georange, edges, dom, algo; ignore_domain = true)

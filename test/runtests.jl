@@ -9,6 +9,20 @@ using Test
 
 end
 
+@testset "test expanding and jumping" begin
+    dom = fill(true, 2000, 2000)
+    georange = similar(dom)
+    sd = spreading_dye(1000, dom, (50,50))
+    sd2 = spreading_dye(1000, dom, (100,100))
+    @test count(sd) == count(sd2) == 1000
+    
+    # create a domain with two unconnected patches
+    dom2 = sd .| sd2
+    SpreadingDye.expand_spreading!(sd, 500, dom2)
+    sd3 = spreading_dye(1500, dom2, (50,50))
+    @test count(sd) == count(sd3) == 1500
+end
+
 @testset "Jesper's example" begin
     import ArchGDAL
     using Rasters
